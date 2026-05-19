@@ -1,0 +1,539 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #ececec;
+  font-family: Arial, sans-serif;
+}
+
+.phone {
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: #f7f7f7;
+  padding-bottom: 96px;
+}
+
+header {
+  background: white;
+  padding: 24px 22px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 32px;
+}
+header p {
+  margin: 6px 0 0;
+  color: #777;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: black;
+  color: white;
+  display: grid;
+  place-items: center;
+  font-weight: bold;
+}
+
+.calendar {
+  background: white;
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px 14px;
+  align-items: center;
+  overflow-x: auto;
+}
+
+.calendar button {
+  border: none;
+  background: #f1f1f1;
+  border-radius: 12px;
+  padding: 10px;
+  min-width: 44px;
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.day span {
+  color: #777;
+  font-size: 12px;
+}
+
+.active-day {
+  background: #111 !important;
+  color: white;
+}
+
+.active-day span {
+  color: white;
+}
+
+main {
+  padding: 18px;
+}
+
+.summary,
+.home-card,
+.meal-tile,
+.meal-detail,
+.modal-card {
+  background: white;
+  border-radius: 24px;
+  padding: 22px;
+  margin-bottom: 16px;
+}
+
+.summary {
+  text-align: center;
+}
+.summary h2 {
+  margin: 0;
+  font-size: 34px;
+}
+.summary p {
+  color: #777;
+}
+
+.bar {
+  height: 9px;
+  background: #eee;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.bar div {
+  height: 100%;
+  background: #111;
+}
+
+.home-card,
+.meal-tile {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.home-card h2 {
+  margin: 0;
+  font-size: 34px;
+}
+
+.home-card p,
+.meal-tile p {
+  color: #777;
+  font-size: 17px;
+}
+
+.circle {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+
+.circle-inner {
+  width: 68px;
+  height: 68px;
+  background: white;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: bold;
+}
+
+.meal-tile {
+  width: 100%;
+  border: none;
+  text-align: left;
+}
+
+.meal-tile h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.meal-total {
+  text-align: right;
+  color: #777;
+}
+
+.meal-total b {
+  display: block;
+  color: #111;
+  font-size: 24px;
+}
+
+.meal-total small {
+  display: block;
+  margin-top: 4px;
+}
+
+.back {
+  border: none;
+  background: transparent;
+  font-size: 17px;
+  margin-bottom: 12px;
+}
+
+.empty {
+  color: #aaa;
+  text-align: center;
+}
+
+.entry {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid #eee;
+  padding: 12px 0;
+}
+
+.entry p {
+  margin: 4px 0 0;
+  color: #777;
+}
+
+.entry button {
+  border: none;
+  background: #eee;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+}
+
+.add-food,
+.save {
+  width: 100%;
+  margin-top: 16px;
+  border: none;
+  background: #111;
+  color: white;
+  border-radius: 14px;
+  padding: 16px;
+  font-size: 18px;
+}
+
+.section-title {
+  margin: 10px 0 14px;
+}
+
+.food-card {
+  width: 100%;
+  border: 1px dashed #ddd;
+  background: white;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  text-align: left;
+}
+
+.left {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.badge {
+  width: 38px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: white;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.food-card h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.food-card p {
+  margin: 5px 0 0;
+  color: #777;
+  font-size: 14px;
+}
+
+.amount {
+  white-space: nowrap;
+  font-weight: bold;
+}
+
+.modal-card {
+  text-align: center;
+}
+
+.muted {
+  color: #777;
+}
+
+.modal-card label {
+  display: block;
+  margin: 18px 0 10px;
+}
+
+input[type='range'] {
+  width: 100%;
+  accent-color: #111;
+}
+
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 44px;
+  margin: 22px 0;
+}
+
+.stats b {
+  display: block;
+  font-size: 30px;
+}
+
+.stats span {
+  color: #777;
+}
+
+.percent-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.percent-buttons button {
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.shopping-add {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.shopping-add input {
+  flex: 1;
+  border: none;
+  border-radius: 14px;
+  padding: 16px;
+  font-size: 16px;
+}
+
+.shopping-add button {
+  width: 52px;
+  border: none;
+  border-radius: 14px;
+  background: #111;
+  color: white;
+  font-size: 24px;
+}
+
+.shopping-item {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.done {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.bottom-nav {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  height: 84px;
+  background: white;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 9999;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 22px 22px 0 0;
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #777;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.nav-item div {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.nav-active {
+  color: #111;
+  font-weight: bold;
+}
+
+.health-box {
+  background: white;
+  border-radius: 24px;
+  padding: 22px;
+  margin-bottom: 16px;
+}
+
+.health-box h2 {
+  margin: 0 0 16px;
+  font-size: 22px;
+}
+
+.health-box label {
+  display: block;
+  color: #777;
+  margin-bottom: 12px;
+  font-size: 15px;
+}
+
+.health-box input {
+  width: 100%;
+  margin-top: 6px;
+  border: none;
+  background: #f2f2f2;
+  border-radius: 14px;
+  padding: 14px;
+  font-size: 16px;
+}
+
+.balance-card {
+  background: #111;
+  color: white;
+  border-radius: 16px;
+  padding: 18px;
+  margin-top: 18px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.balance-card span {
+  display: block;
+  color: #bdbdbd;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.balance-card b {
+  font-size: 24px;
+}
+
+.balance-right {
+  text-align: right;
+}
+
+.simple-card {
+  background: white;
+  border-radius: 24px;
+  padding: 24px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.simple-card h2 {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.simple-card p {
+  margin-top: 12px;
+  color: #777;
+  font-size: 16px;
+}
+
+.add-meal-btn {
+  width: 100%;
+  border: none;
+  background: white;
+  color: #111;
+  padding: 20px;
+  border-radius: 24px;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 12px 0 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.add-meal-btn:active {
+  transform: scale(0.98);
+  background: #f0f0f0;
+}
+
+.swipe-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  margin-bottom: 16px;
+}
+
+.swipe-wrapper .meal-tile {
+  position: relative;
+  z-index: 2;
+  transition: transform 0.25s ease;
+  margin-bottom: 0;
+}
+
+.swipe-wrapper.swiped .meal-tile {
+  transform: translateX(-110px);
+}
+
+.delete-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 110px;
+  height: 100%;
+  border: none;
+  background: #ff3b30;
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  border-radius: 24px;
+  z-index: 1;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.delete-btn span {
+  font-size: 15px;
+}
