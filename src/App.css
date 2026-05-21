@@ -6,14 +6,17 @@ body {
   margin: 0;
   background: #ececec;
   font-family: Arial, sans-serif;
+  overflow-x: hidden;
 }
 
 .phone {
+  width: 100%;
   max-width: 430px;
   margin: 0 auto;
-  min-height: 100vh;
+  min-height: 100dvh;
   background: #f7f7f7;
-  padding-bottom: 96px;
+  padding-bottom: 110px;
+  overflow-x: hidden;
 }
 
 header {
@@ -51,6 +54,11 @@ header p {
   padding: 8px 10px 14px;
   align-items: center;
   overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.calendar::-webkit-scrollbar {
+  display: none;
 }
 
 .calendar button {
@@ -371,7 +379,7 @@ input[type='range'] {
   transform: translateX(-50%);
   width: 100%;
   max-width: 430px;
-  height: 84px;
+  height: 92px;
   background: white;
   display: flex;
   justify-content: space-around;
@@ -379,6 +387,7 @@ input[type='range'] {
   z-index: 9999;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
   border-radius: 22px 22px 0 0;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .nav-item {
@@ -536,4 +545,33 @@ input[type='range'] {
 
 .delete-btn span {
   font-size: 15px;
+}
+
+.health-box select {
+  width: 100%;
+  margin-top: 6px;
+  border: none;
+  background: #f2f2f2;
+  border-radius: 14px;
+  padding: 14px;
+  font-size: 16px;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-back {
+  border: none;
+  background: transparent;
+  font-size: 40px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+}
+
+.meal-detail {
+  margin-top: 22px;
 }
