@@ -403,6 +403,15 @@ function addDays(date, days) {
   return d.toISOString().slice(0, 10);
 }
 
+function toNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function clamp(value, min = 0, max = 100) {
+  return Math.max(min, Math.min(max, value));
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('ration');
   const [selectedDate, setSelectedDate] = useState(todayISO());
@@ -411,14 +420,7 @@ export default function App() {
   const [adding, setAdding] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [amount, setAmount] = useState(0);
-  const [shopping, setShopping] = useState([
-    { id: 1, text: 'Яйця', done: false },
-  ]);
-  
-  const [newItem, setNewItem] = useState('');
-  
   const [extraMeals, setExtraMeals] = useState([]);
-  
   const [touchStart, setTouchStart] = useState(0);
   const [swipedMeal, setSwipedMeal] = useState(null);
 
@@ -432,38 +434,74 @@ export default function App() {
     gender: 'female',
     age: 30,
     height: 169,
+    startWeight: 68.5,
     weight: 68.5,
     goalWeight: 56,
-    stepsGoal: 7000,
   });
 
-  const entries = diary[selectedDate] || [];
-  const mealNames = [...baseMeals, ...extraMeals];
+  const age = toNumber(profile.age);
+  const height = toNumber(profile.height);
+  const startWeight = toNumber(profile.startWeight);
+  const currentWeight = toNumber(profile.weight);
+  const goalWeight = toNumber(profile.goalWeight);
+
+  const calculatedStepsGoal = useMemo(() => {
+    if (!currentWeight || !height || !age) return 7000;
+
+    let goal = 7000;
+
+    if (currentWeight - goalWeight > 10) goal += 1000;
+    if (currentWeight - goalWeight > 20) goal += 500;
+    if (age > 45) goal -= 500;
+    if (age > 60) goal -= 1000;
+
+    return clamp(Math.round(goal / 500) * 500, 5000, 10000);
+  }, [age, height, currentWeight, goalWeight]);
+
+  const stepsGoal = calculatedStepsGoal;
+
   const bmr =
-  profile.gender === 'female'
-    ? 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 161
-    : 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + 5;
+    age && height && currentWeight
+      ? profile.gender === 'female'
+        ? 10 * currentWeight + 6.25 * height - 5 * age - 161
+        : 10 * currentWeight + 6.25 * height - 5 * age + 5
+      : 0;
 
   const activityMultiplier =
-    profile.stepsGoal < 5000 ? 1.2 :
-    profile.stepsGoal < 7000 ? 1.3 :
-    profile.stepsGoal < 10000 ? 1.35 :
-    1.45;
+    stepsGoal < 5000
+      ? 1.2
+      : stepsGoal < 7000
+      ? 1.3
+      : stepsGoal < 10000
+      ? 1.35
+      : 1.45;
 
-  const maintenanceCalories = Math.round(bmr * activityMultiplier);
+  const maintenanceCalories = bmr ? Math.round(bmr * activityMultiplier) : 0;
 
-  const weightToLose = Math.max(0, profile.weight - profile.goalWeight);
+  const weightToLose = Math.max(0, currentWeight - goalWeight);
 
-  const deficit =
-    weightToLose > 10 ? 350 :
-    weightToLose > 5 ? 300 :
-    250;
+  const deficit = weightToLose > 10 ? 350 : weightToLose > 5 ? 300 : 250;
 
-  const dailyGoal = Math.max(1200, maintenanceCalories - deficit);
+  const dailyGoal = maintenanceCalories
+    ? Math.round(Math.max(1200, maintenanceCalories - deficit))
+    : 1944;
+
+  const totalWeightToLose = startWeight - goalWeight;
+  const lostWeight = startWeight - currentWeight;
+
+  const weightProgress =
+    totalWeightToLose > 0
+      ? clamp(Math.round((lostWeight / totalWeightToLose) * 100))
+      : 0;
+
+  const stepsToday = toNumber(health.steps);
+  const stepsPercent = stepsGoal
+    ? clamp(Math.round((stepsToday / stepsGoal) * 100))
+    : 0;
 
   const planScale = dailyGoal / 1944;
 
-  const getPlannedProduct = (product) => {
+  const plannedProducts = products.map((product) => {
     const groupMultiplier = GROUP_MULTIPLIERS[product.group] || 1;
     const totalMultiplier = groupMultiplier * planScale;
 
@@ -473,22 +511,26 @@ export default function App() {
       kcal: Math.max(1, Math.round(product.kcal * totalMultiplier)),
       protein: Number((product.protein * totalMultiplier).toFixed(1)),
     };
-  };
+  });
 
-  const plannedProducts = products.map(getPlannedProduct);
+  const entries = diary[selectedDate] || [];
+  const mealNames = [...baseMeals, ...extraMeals];
 
+  const totals = useMemo(() => {
+    const kcal = entries.reduce((s, e) => s + e.kcal, 0);
+    const protein = entries.reduce((s, e) => s + e.protein, 0);
+    const meals = new Set(entries.map((e) => e.meal)).size;
+    return { kcal, protein, meals };
+  }, [entries]);
 
-    const totals = useMemo(() => {
-      const kcal = entries.reduce((s, e) => s + e.kcal, 0);
-      const protein = entries.reduce((s, e) => s + e.protein, 0);
-      const meals = new Set(entries.map((e) => e.meal)).size;
-      return { kcal, protein, meals };
-    }, [entries]);
+  const kcalPercent = dailyGoal
+    ? clamp(Math.round((totals.kcal / dailyGoal) * 100))
+    : 0;
 
-  const kcalPercent = Math.min(
-    100,
-    Math.round((totals.kcal / dailyGoal) * 100)
-  );
+  const proteinGoal = currentWeight ? Math.round(currentWeight * 1.4) : 90;
+  const proteinPercent = proteinGoal
+    ? clamp(Math.round((totals.protein / proteinGoal) * 100))
+    : 0;
 
   const getGroupUsed = (group) =>
     Math.min(
@@ -537,40 +579,31 @@ export default function App() {
     setDiary({ ...diary, [selectedDate]: entries.filter((e) => e.id !== id) });
   };
 
-  const addShopping = () => {
-    if (!newItem.trim()) return;
-    setShopping([
-      ...shopping,
-      { id: Date.now(), text: newItem.trim(), done: false },
-    ]);
-    setNewItem('');
-  };
-
   const week = [-3, -2, -1, 0, 1, 2, 3].map((n) => addDays(selectedDate, n));
 
   return (
     <div className="phone">
       <header>
-      <div>
-        <div className="header-title">
-          {openedMeal && (
-            <button
-              className="header-back"
-              onClick={() => setOpenedMeal(null)}
-            >
-              ‹
-            </button>
-          )}
+        <div>
+          <div className="header-title">
+            {openedMeal && (
+              <button
+                className="header-back"
+                onClick={() => setOpenedMeal(null)}
+              >
+                ‹
+              </button>
+            )}
 
-          <h1>
-            {activeTab === 'ration' && 'Раціон'}
-            {activeTab === 'home' && 'Головна'}
-            {activeTab === 'progress' && 'Прогрес'}
-          </h1>
+            <h1>
+              {activeTab === 'ration' && 'Раціон'}
+              {activeTab === 'home' && 'Головна'}
+              {activeTab === 'progress' && 'Прогрес'}
+            </h1>
+          </div>
+
+          <p>{new Date(selectedDate).toLocaleDateString('uk-UA')}</p>
         </div>
-
-        <p>{new Date(selectedDate).toLocaleDateString("uk-UA")}</p>
-      </div>
         <div className="avatar">У</div>
       </header>
 
@@ -619,7 +652,9 @@ export default function App() {
 
                 return (
                   <div
-                    className={`swipe-wrapper ${swipedMeal === m ? "swiped" : ""}`}
+                    className={`swipe-wrapper ${
+                      swipedMeal === m ? 'swiped' : ''
+                    }`}
                     key={m}
                   >
                     {extraMeals.includes(m) && (
@@ -627,7 +662,9 @@ export default function App() {
                         className="delete-btn"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setExtraMeals(extraMeals.filter((meal) => meal !== m));
+                          setExtraMeals(
+                            extraMeals.filter((meal) => meal !== m)
+                          );
                           setSwipedMeal(null);
                         }}
                       >
@@ -665,12 +702,13 @@ export default function App() {
                           {mealEntries.length
                             ? `${mealEntries.length} ${
                                 mealEntries.length === 1
-                                  ? "продукт"
-                                  : mealEntries.length >= 2 && mealEntries.length <= 4
-                                  ? "продукти"
-                                  : "продуктів"
+                                  ? 'продукт'
+                                  : mealEntries.length >= 2 &&
+                                    mealEntries.length <= 4
+                                  ? 'продукти'
+                                  : 'продуктів'
                               }`
-                            : "Поки нічого не додано"}
+                            : 'Поки нічого не додано'}
                         </p>
                       </div>
 
@@ -698,7 +736,6 @@ export default function App() {
 
           {openedMeal && !adding && (
             <>
-
               <section className="meal-detail">
                 <h2>{openedMeal}</h2>
 
@@ -855,9 +892,14 @@ export default function App() {
             percent={kcalPercent}
           />
           <HomeCard
-            value={`${totals.protein.toFixed(1)} г`}
+            value={`${totals.protein.toFixed(1)} / ${proteinGoal} г`}
             text="білка сьогодні"
-            percent={Math.min(100, Math.round(totals.protein))}
+            percent={proteinPercent}
+          />
+          <HomeCard
+            value={`${stepsToday} / ${stepsGoal}`}
+            text="кроків сьогодні"
+            percent={stepsPercent}
           />
           <div className="simple-card">
             <h2>{totals.meals}</h2>
@@ -875,7 +917,7 @@ export default function App() {
                 onChange={(e) =>
                   setHealth({ ...health, steps: e.target.value })
                 }
-                placeholder="Наприклад 8500"
+                placeholder={`Наприклад ${stepsGoal}`}
               />
             </label>
 
@@ -932,107 +974,110 @@ export default function App() {
       )}
 
       {activeTab === 'progress' && (
-  <main>
-    <section className="health-box">
-      <h2>Мої дані</h2>
+        <main>
+          <section className="health-box">
+            <h2>Мої дані</h2>
 
-      <label>
-        Стать
-        <select
-          value={profile.gender}
-          onChange={(e) =>
-            setProfile({ ...profile, gender: e.target.value })
-          }
-        >
-          <option value="female">Жінка</option>
-          <option value="male">Чоловік</option>
-        </select>
-      </label>
+            <label>
+              Стать
+              <select
+                value={profile.gender}
+                onChange={(e) =>
+                  setProfile({ ...profile, gender: e.target.value })
+                }
+              >
+                <option value="female">Жінка</option>
+                <option value="male">Чоловік</option>
+              </select>
+            </label>
 
-      <label>
-        Вік
-        <input
-          type="number"
-          value={profile.age}
-          onChange={(e) =>
-            setProfile({ ...profile, age: Number(e.target.value) })
-          }
-        />
-      </label>
+            <label>
+              Вік
+              <input
+                type="number"
+                value={profile.age}
+                onChange={(e) =>
+                  setProfile({ ...profile, age: e.target.value })
+                }
+              />
+            </label>
 
-      <label>
-        Зріст, см
-        <input
-          type="number"
-          value={profile.height}
-          onChange={(e) =>
-            setProfile({ ...profile, height: Number(e.target.value) })
-          }
-        />
-      </label>
+            <label>
+              Зріст, см
+              <input
+                type="number"
+                value={profile.height}
+                onChange={(e) =>
+                  setProfile({ ...profile, height: e.target.value })
+                }
+              />
+            </label>
 
-      <label>
-        Поточна вага, кг
-        <input
-          type="number"
-          value={profile.weight}
-          onChange={(e) =>
-            setProfile({ ...profile, weight: Number(e.target.value) })
-          }
-        />
-      </label>
+            <label>
+              Початкова вага, кг
+              <input
+                type="number"
+                value={profile.startWeight}
+                onChange={(e) =>
+                  setProfile({ ...profile, startWeight: e.target.value })
+                }
+              />
+            </label>
 
-      <label>
-        Бажана вага, кг
-        <input
-          type="number"
-          value={profile.goalWeight}
-          onChange={(e) =>
-            setProfile({ ...profile, goalWeight: Number(e.target.value) })
-          }
-        />
-      </label>
+            <label>
+              Поточна вага, кг
+              <input
+                type="number"
+                value={profile.weight}
+                onChange={(e) =>
+                  setProfile({ ...profile, weight: e.target.value })
+                }
+              />
+            </label>
 
-      <label>
-        Ціль кроків на день
-        <input
-          type="number"
-          value={profile.stepsGoal}
-          onChange={(e) =>
-            setProfile({ ...profile, stepsGoal: Number(e.target.value) })
-          }
-        />
-      </label>
-    </section>
+            <label>
+              Бажана вага, кг
+              <input
+                type="number"
+                value={profile.goalWeight}
+                onChange={(e) =>
+                  setProfile({ ...profile, goalWeight: e.target.value })
+                }
+              />
+            </label>
+          </section>
 
-    <HomeCard
-      value={`${dailyGoal} ккал`}
-      text="рекомендовано на день"
-      percent={100}
-    />
+          <HomeCard
+            value={`${dailyGoal} ккал`}
+            text="рекомендовано на день"
+            percent={100}
+          />
 
-    <HomeCard
-      value={`${maintenanceCalories} ккал`}
-      text="приблизне підтримання"
-      percent={0}
-    />
+          <HomeCard
+            value={`${maintenanceCalories} ккал`}
+            text="приблизне підтримання"
+            percent={0}
+          />
 
-    <HomeCard
-      value={`${Math.round(bmr)} ккал`}
-      text="базовий обмін"
-      percent={0}
-    />
+          <HomeCard
+            value={`${Math.round(bmr)} ккал`}
+            text="базовий обмін"
+            percent={0}
+          />
 
-    <HomeCard
-      value={`${weightToLose.toFixed(1)} кг`}
-      text="залишилось до цілі"
-      percent={Math.min(
-        100,
-        Math.round((profile.goalWeight / profile.weight) * 100)
+          <HomeCard
+            value={`${weightToLose.toFixed(1)} кг`}
+            text="залишилось до цілі"
+            percent={weightProgress}
+          />
+
+          <HomeCard
+            value={`${stepsGoal} кроків`}
+            text="ціль активності на день"
+            percent={stepsPercent}
+          />
+        </main>
       )}
-    />
-  </main>
-)}
 
       <div className="bottom-nav">
         <Nav
@@ -1065,6 +1110,8 @@ export default function App() {
 }
 
 function HomeCard({ value, text, percent }) {
+  const safePercent = clamp(Number(percent) || 0);
+
   return (
     <div className="home-card">
       <div>
@@ -1074,10 +1121,12 @@ function HomeCard({ value, text, percent }) {
       <div
         className="circle"
         style={{
-          background: `conic-gradient(#111 ${percent * 3.6}deg, #e5e5e5 0deg)`,
+          background: `conic-gradient(#111 ${
+            safePercent * 3.6
+          }deg, #e5e5e5 0deg)`,
         }}
       >
-        <div className="circle-inner">{percent}%</div>
+        <div className="circle-inner">{safePercent}%</div>
       </div>
     </div>
   );
