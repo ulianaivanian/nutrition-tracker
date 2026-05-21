@@ -417,16 +417,45 @@ export default function App() {
     restingCalories: '',
   });
 
+  const [profile, setProfile] = useState({
+    gender: 'female',
+    age: 30,
+    height: 169,
+    weight: 68.5,
+    goalWeight: 56,
+    stepsGoal: 7000,
+  });
+
   const entries = diary[selectedDate] || [];
   const mealNames = [...baseMeals, ...extraMeals];
-  const dailyGoal = 1943;
+  const bmr =
+  profile.gender === 'female'
+    ? 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 161
+    : 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + 5;
 
-  const totals = useMemo(() => {
-    const kcal = entries.reduce((s, e) => s + e.kcal, 0);
-    const protein = entries.reduce((s, e) => s + e.protein, 0);
-    const meals = new Set(entries.map((e) => e.meal)).size;
-    return { kcal, protein, meals };
-  }, [entries]);
+  const activityMultiplier =
+    profile.stepsGoal < 5000 ? 1.2 :
+    profile.stepsGoal < 7000 ? 1.3 :
+    profile.stepsGoal < 10000 ? 1.35 :
+    1.45;
+
+  const maintenanceCalories = Math.round(bmr * activityMultiplier);
+
+  const weightToLose = Math.max(0, profile.weight - profile.goalWeight);
+
+  const deficit =
+    weightToLose > 10 ? 350 :
+    weightToLose > 5 ? 300 :
+    250;
+
+  const dailyGoal = Math.max(1200, maintenanceCalories - deficit);
+
+    const totals = useMemo(() => {
+      const kcal = entries.reduce((s, e) => s + e.kcal, 0);
+      const protein = entries.reduce((s, e) => s + e.protein, 0);
+      const meals = new Set(entries.map((e) => e.meal)).size;
+      return { kcal, protein, meals };
+    }, [entries]);
 
   const kcalPercent = Math.min(
     100,
@@ -494,15 +523,26 @@ export default function App() {
   return (
     <div className="phone">
       <header>
-        <div>
+      <div>
+        <div className="header-title">
+          {openedMeal && (
+            <button
+              className="header-back"
+              onClick={() => setOpenedMeal(null)}
+            >
+              ‹
+            </button>
+          )}
+
           <h1>
             {activeTab === 'ration' && 'Раціон'}
             {activeTab === 'home' && 'Головна'}
-            {activeTab === 'shopping' && 'Покупки'}
             {activeTab === 'progress' && 'Прогрес'}
           </h1>
-          <p>{new Date(selectedDate).toLocaleDateString("uk-UA")}</p>
         </div>
+
+        <p>{new Date(selectedDate).toLocaleDateString("uk-UA")}</p>
+      </div>
         <div className="avatar">У</div>
       </header>
 
@@ -630,9 +670,6 @@ export default function App() {
 
           {openedMeal && !adding && (
             <>
-              <button className="back" onClick={() => setOpenedMeal(null)}>
-                ‹ Назад до раціону
-              </button>
 
               <section className="meal-detail">
                 <h2>{openedMeal}</h2>
@@ -866,42 +903,108 @@ export default function App() {
         </main>
       )}
 
-      {activeTab === 'shopping' && (
-        <main>
-          <div className="shopping-add">
-            <input
-              value={newItem}
-              onChange={(e) => setNewItem(e.target.value)}
-              placeholder="Що купити?"
-            />
-            <button onClick={addShopping}>+</button>
-          </div>
-
-          {shopping.map((item) => (
-            <label className="shopping-item" key={item.id}>
-              <input
-                type="checkbox"
-                checked={item.done}
-                onChange={() =>
-                  setShopping(
-                    shopping.map((x) =>
-                      x.id === item.id ? { ...x, done: !x.done } : x
-                    )
-                  )
-                }
-              />
-              <span className={item.done ? 'done' : ''}>{item.text}</span>
-            </label>
-          ))}
-        </main>
-      )}
-
       {activeTab === 'progress' && (
-        <main>
-          <HomeCard value="68,5 кг" text="поточна вага" percent={0} />
-          <HomeCard value="56 кг" text="цільова вага" percent={0} />
-        </main>
+  <main>
+    <section className="health-box">
+      <h2>Мої дані</h2>
+
+      <label>
+        Стать
+        <select
+          value={profile.gender}
+          onChange={(e) =>
+            setProfile({ ...profile, gender: e.target.value })
+          }
+        >
+          <option value="female">Жінка</option>
+          <option value="male">Чоловік</option>
+        </select>
+      </label>
+
+      <label>
+        Вік
+        <input
+          type="number"
+          value={profile.age}
+          onChange={(e) =>
+            setProfile({ ...profile, age: Number(e.target.value) })
+          }
+        />
+      </label>
+
+      <label>
+        Зріст, см
+        <input
+          type="number"
+          value={profile.height}
+          onChange={(e) =>
+            setProfile({ ...profile, height: Number(e.target.value) })
+          }
+        />
+      </label>
+
+      <label>
+        Поточна вага, кг
+        <input
+          type="number"
+          value={profile.weight}
+          onChange={(e) =>
+            setProfile({ ...profile, weight: Number(e.target.value) })
+          }
+        />
+      </label>
+
+      <label>
+        Бажана вага, кг
+        <input
+          type="number"
+          value={profile.goalWeight}
+          onChange={(e) =>
+            setProfile({ ...profile, goalWeight: Number(e.target.value) })
+          }
+        />
+      </label>
+
+      <label>
+        Ціль кроків на день
+        <input
+          type="number"
+          value={profile.stepsGoal}
+          onChange={(e) =>
+            setProfile({ ...profile, stepsGoal: Number(e.target.value) })
+          }
+        />
+      </label>
+    </section>
+
+    <HomeCard
+      value={`${dailyGoal} ккал`}
+      text="рекомендовано на день"
+      percent={100}
+    />
+
+    <HomeCard
+      value={`${maintenanceCalories} ккал`}
+      text="приблизне підтримання"
+      percent={0}
+    />
+
+    <HomeCard
+      value={`${Math.round(bmr)} ккал`}
+      text="базовий обмін"
+      percent={0}
+    />
+
+    <HomeCard
+      value={`${weightToLose.toFixed(1)} кг`}
+      text="залишилось до цілі"
+      percent={Math.min(
+        100,
+        Math.round((profile.goalWeight / profile.weight) * 100)
       )}
+    />
+  </main>
+)}
 
       <div className="bottom-nav">
         <Nav
@@ -918,15 +1021,6 @@ export default function App() {
           onClick={() => setActiveTab('ration')}
           icon="🍴"
           text="Раціон"
-        />
-        <Nav
-          active={activeTab === 'shopping'}
-          onClick={() => {
-            setActiveTab('shopping');
-            setOpenedMeal(null);
-          }}
-          icon="🛒"
-          text="Покупки"
         />
         <Nav
           active={activeTab === 'progress'}
