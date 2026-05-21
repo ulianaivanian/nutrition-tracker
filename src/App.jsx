@@ -382,6 +382,17 @@ const products = [
   },
 ];
 
+const GROUP_MULTIPLIERS = {
+  carbs: 4,
+  protein: 1.6,
+  veg: 1,
+  fat: 1,
+  dairy: 1,
+  fruit: 1,
+  nuts: 1,
+  free: 1,
+};
+
 const baseMeals = ['Сніданок', 'Обід', 'Вечеря'];
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
@@ -449,6 +460,23 @@ export default function App() {
     250;
 
   const dailyGoal = Math.max(1200, maintenanceCalories - deficit);
+
+  const planScale = dailyGoal / 1944;
+
+  const getPlannedProduct = (product) => {
+    const groupMultiplier = GROUP_MULTIPLIERS[product.group] || 1;
+    const totalMultiplier = groupMultiplier * planScale;
+
+    return {
+      ...product,
+      portion: Math.max(1, Math.round(product.portion * totalMultiplier)),
+      kcal: Math.max(1, Math.round(product.kcal * totalMultiplier)),
+      protein: Number((product.protein * totalMultiplier).toFixed(1)),
+    };
+  };
+
+  const plannedProducts = products.map(getPlannedProduct);
+
 
     const totals = useMemo(() => {
       const kcal = entries.reduce((s, e) => s + e.kcal, 0);
@@ -712,7 +740,7 @@ export default function App() {
               <h2 className="section-title">Додати в: {openedMeal}</h2>
 
               {!selectedProduct &&
-                products.map((p) => {
+                plannedProducts.map((p) => {
                   const available = Math.max(
                     0,
                     Math.round(p.portion * (1 - getGroupUsed(p.group)))
